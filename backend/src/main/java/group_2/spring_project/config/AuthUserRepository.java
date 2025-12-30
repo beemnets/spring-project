@@ -10,5 +10,7 @@ import java.util.Optional;
 public interface AuthUserRepository extends JpaRepository<AuthUser, Long> {
     Optional<AuthUser> findByUsername(String username);
     boolean existsByUsername(String username);
+    void deleteByUsername(String username);
+    Page<AuthUser> findByUsernameContainingIgnoreCase(String username, Pageable pageable);
 }
 
