@@ -1,16 +1,19 @@
-package group_2.spring_project.services;
+package org.wldu.webservices.services;
 
-import group_2.spring_project.entities.*;
-import group_2.spring_project.repositories.SavingAccountRepository;
-import group_2.spring_project.repositories.TransactionRepository;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.slf4j.Logger;
+import org.wldu.webservices.entities.*;
+import org.wldu.webservices.repositories.SavingAccountRepository;
+import org.wldu.webservices.repositories.TransactionRepository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -92,6 +95,16 @@ public class SavingAccountService {
     }
 
     // ========== READ OPERATIONS ==========
+    @Transactional(readOnly = true)
+    public Page<SavingAccount> getAllAccounts(Pageable pageable) {
+        return savingAccountRepository.findAll(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<SavingAccount> searchAccounts(String keyword, Pageable pageable) {
+        return savingAccountRepository.searchAccounts(keyword, pageable);
+    }
+
     @Transactional(readOnly = true)
     public SavingAccount getAccount(Long accountId) {
         return savingAccountRepository.findById(accountId)
@@ -221,6 +234,101 @@ public class SavingAccountService {
         SavingAccount account = getAccount(accountId);
         account.setIsActive(true);
         return savingAccountRepository.save(account);
+    }
+
+    // ========== BULK OPERATIONS ==========
+    @Transactional
+    public Map<String, Object> bulkDepositByDomain(String workDomain, Double amount, String description) {
+        logger.info("Starting bulk deposit for domain: {}, amount: {}", workDomain, amount);
+
+        if (workDomain == null || workDomain.trim().isEmpty()) {
+            throw new IllegalArgumentException("Work domain is required");
+        }
+        if (amount == null || amount <= 0) {
+            throw new IllegalArgumentException("Amount must be positive");
+        }
+
+        try {
+            // Convert string to enum
+            Member.WorkDomain domain = Member.WorkDomain.valueOf(workDomain.toUpperCase());
+            
+            // Get all active members in the specified domain
+            List<Member> members = memberService.getMembersByDomain(domain);
+            List<Member> activeMembers = members.stream()
+                    .filter(Member::getIsActive)
+                    .collect(java.util.stream.Collectors.toList());
+
+            logger.info("Found {} active members in domain {}", activeMembers.size(), workDomain);
+
+            int successCount = 0;
+            int failureCount = 0;
+            List<String> errors = new java.util.ArrayList<>();
+            List<Map<String, Object>> successfulDeposits = new java.util.ArrayList<>();
+
+            for (Member member : activeMembers) {
+                try {
+                    // Get member's active accounts
+                    List<SavingAccount> accounts = getActiveMemberAccounts(member.getId());
+                    
+                    if (accounts.isEmpty()) {
+                        errors.add("Member " + member.getEmployeeId() + " has no active accounts");
+                        failureCount++;
+                        continue;
+                    }
+
+                    // Deposit to the first active account (or primary account)
+                    SavingAccount primaryAccount = accounts.get(0);
+                    
+                    // Create transaction
+                    Transaction transaction = new Transaction(amount, Transaction.TransactionType.DEPOSIT, 
+                            description != null ? description : "Bulk deposit for " + workDomain + " domain");
+                    transaction.setAccount(primaryAccount);
+                    transaction.setReferenceNumber(generateReferenceNumber());
+                    transactionRepository.save(transaction);
+
+                    // Update account balance
+                    primaryAccount.setCurrentBalance(primaryAccount.getCurrentBalance() + amount);
+                    savingAccountRepository.save(primaryAccount);
+
+                    // Record success
+                    Map<String, Object> depositInfo = new java.util.HashMap<>();
+                    depositInfo.put("memberId", member.getId());
+                    depositInfo.put("memberName", member.getFirstName() + " " + member.getLastName());
+                    depositInfo.put("employeeId", member.getEmployeeId());
+                    depositInfo.put("accountNumber", primaryAccount.getAccountNumber());
+                    depositInfo.put("amount", amount);
+                    depositInfo.put("newBalance", primaryAccount.getCurrentBalance());
+                    depositInfo.put("transactionRef", transaction.getReferenceNumber());
+                    successfulDeposits.add(depositInfo);
+
+                    successCount++;
+                    logger.info("Deposited {} to account {} for member {}", amount, primaryAccount.getAccountNumber(), member.getEmployeeId());
+
+                } catch (Exception e) {
+                    logger.error("Failed to deposit for member {}: {}", member.getEmployeeId(), e.getMessage());
+                    errors.add("Member " + member.getEmployeeId() + ": " + e.getMessage());
+                    failureCount++;
+                }
+            }
+
+            // Prepare result summary
+            Map<String, Object> result = new java.util.HashMap<>();
+            result.put("totalMembers", activeMembers.size());
+            result.put("successCount", successCount);
+            result.put("failureCount", failureCount);
+            result.put("totalAmount", successCount * amount);
+            result.put("successfulDeposits", successfulDeposits);
+            result.put("errors", errors);
+
+            logger.info("Bulk deposit completed: {} successes, {} failures", successCount, failureCount);
+            return result;
+
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid work domain: " + workDomain + ". Valid domains: ACADEMIC, ADMINISTRATION, CONTRACT, OTHER");
+        } catch (Exception e) {
+            logger.error("Error in bulk deposit: {}", e.getMessage(), e);
+            throw new RuntimeException("Bulk deposit failed: " + e.getMessage());
+        }
     }
 
     // ========== HELPERS ==========

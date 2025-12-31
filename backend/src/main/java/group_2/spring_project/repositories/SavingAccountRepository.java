@@ -1,13 +1,12 @@
-package group_2.spring_project.repositories;
+package org.wldu.webservices.repositories;
 
-
-import group_2.spring_project.entities.FormalSavingAccount;
-import group_2.spring_project.entities.InformalSavingAccount;
-import group_2.spring_project.entities.SavingAccount;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.wldu.webservices.entities.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,6 +21,14 @@ public interface SavingAccountRepository extends JpaRepository<SavingAccount, Lo
     Optional<SavingAccount> findByAccountNumber(String accountNumber);
     boolean existsByAccountNumber(String accountNumber);
     List<SavingAccount> findByIsActive(Boolean isActive);
+
+    // ========== PAGINATION QUERIES ==========
+    @Query("SELECT sa FROM SavingAccount sa WHERE " +
+            "LOWER(sa.accountNumber) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(sa.member.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(sa.member.lastName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(sa.member.employeeId) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Page<SavingAccount> searchAccounts(@Param("keyword") String keyword, Pageable pageable);
 
     // ✅ FIXED COUNT QUERIES - THIS IS THE ONLY CHANGE NEEDED
     @Query("SELECT COUNT(sa) FROM SavingAccount sa " +

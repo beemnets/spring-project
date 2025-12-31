@@ -1,10 +1,10 @@
-package group_2.spring_project.repositories;
+package org.wldu.webservices.repositories;
 
-import group_2.spring_project.entities.Transaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.wldu.webservices.entities.Transaction;
 
 import java.time.LocalDateTime;
 import java.util.List;
