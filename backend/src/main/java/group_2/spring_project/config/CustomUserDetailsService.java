@@ -25,7 +25,6 @@ public class CustomUserDetailsService implements UserDetailsService {
         AuthUser user = authUserRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-        // Layered approach: Wrap simple entity in Spring User
         return User.withUsername(user.getUsername())
                 .password(user.getPassword())
                 .authorities(List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())))

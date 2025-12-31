@@ -28,7 +28,6 @@ public class AuthUser {
         ADMIN, MANAGER, ASSISTANT
     }
 
-    // Constructors
     public AuthUser() {}
 
     public AuthUser(String username, String password, Role role) {
@@ -37,7 +36,6 @@ public class AuthUser {
         this.role = role;
     }
 
-    // Getters/Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getUsername() { return username; }

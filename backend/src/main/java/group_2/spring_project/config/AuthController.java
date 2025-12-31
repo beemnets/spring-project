@@ -37,7 +37,6 @@ public class AuthController {
 
         AuthUser user = authUserRepository.findByUsername(request.username()).get();
 
-        // ✅ FIXED: Cast to List
         List<GrantedAuthority> authorities = authentication.getAuthorities().stream()
                 .collect(Collectors.toList());
 
@@ -92,7 +91,6 @@ public class AuthController {
                 staffPage = authUserRepository.findAll(pageable);
             }
             
-            // Convert to response format
             List<Map<String, Object>> staffList = staffPage.getContent().stream()
                 .map(user -> {
                     Map<String, Object> userMap = new HashMap<>();
@@ -152,7 +150,6 @@ public class AuthController {
             AuthUser user = authUserRepository.findByUsername(username)
                     .orElseThrow(() -> new RuntimeException("User not found"));
             
-            // Validate the new role
             AuthUser.Role newRole;
             try {
                 newRole = AuthUser.Role.valueOf(request.role().toUpperCase());

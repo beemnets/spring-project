@@ -37,14 +37,13 @@ public class JwtConfig extends OncePerRequestFilter {
         this.userDetailsService = userDetailsService;
     }
 
-    // ✅ FIXED generateToken method
     public String generateToken(String username, List<? extends GrantedAuthority> authorities) {
         List<String> roles = authorities.stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
 
         return Jwts.builder()
-                .claim("roles", roles)  // ✅ Direct claim - NO Claims object needed!
+                .claim("roles", roles)
                 .subject(username)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiration))

@@ -59,7 +59,6 @@ public class AuthConfig {
                         .requestMatchers("/api/members/**").hasAnyRole("MANAGER", "ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
-                        // ✅ ALL OTHER ENDPOINTS REQUIRE AUTH
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtConfig, UsernamePasswordAuthenticationFilter.class);
