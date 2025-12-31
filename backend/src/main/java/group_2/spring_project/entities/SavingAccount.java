@@ -1,4 +1,4 @@
-package group_2.spring_project.entities;
+package org.wldu.webservices.entities;
 
 
 import jakarta.persistence.*;

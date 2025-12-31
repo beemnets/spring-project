@@ -1,17 +1,18 @@
-package group_2.spring_project.controllers;
+package org.wldu.webservices.controllers;
 
-
-
-import group_2.spring_project.entities.FormalSavingAccount;
-import group_2.spring_project.entities.InformalSavingAccount;
-import group_2.spring_project.entities.SavingAccount;
-import group_2.spring_project.entities.Transaction;
-import group_2.spring_project.services.SavingAccountService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.wldu.webservices.entities.FormalSavingAccount;
+import org.wldu.webservices.entities.InformalSavingAccount;
+import org.wldu.webservices.entities.SavingAccount;
+import org.wldu.webservices.entities.Transaction;
+import org.wldu.webservices.services.SavingAccountService;
 
 import java.util.HashMap;
 import java.util.List;
@@ -66,6 +67,24 @@ public class SavingAccountController {
             return badRequest(e.getMessage());
         } catch (Exception e) {
             return serverError("Error creating informal account");
+        }
+    }
+
+    @PreAuthorize("hasAnyRole('ASSISTANT', 'MANAGER', 'ADMIN')")
+    @GetMapping
+    public ResponseEntity<?> getAllAccounts(
+            @PageableDefault(size = 10, sort = "id") Pageable pageable,
+            @RequestParam(required = false) String search) {
+        try {
+            Page<SavingAccount> accounts;
+            if (search != null && !search.trim().isEmpty()) {
+                accounts = savingAccountService.searchAccounts(search.trim(), pageable);
+            } else {
+                accounts = savingAccountService.getAllAccounts(pageable);
+            }
+            return ResponseEntity.ok(accounts);
+        } catch (Exception e) {
+            return serverError("Error retrieving accounts");
         }
     }
 
@@ -283,6 +302,39 @@ public class SavingAccountController {
             return badRequest(e.getMessage());
         } catch (Exception e) {
             return serverError("Error reactivating account");
+        }
+    }
+
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    @PostMapping("/bulk-deposit")
+    public ResponseEntity<?> bulkDepositByDomain(
+            @RequestParam String workDomain, 
+            @RequestParam Double amount, 
+            @RequestParam(required = false) String description) {
+        try {
+            if (amount == null || amount <= 0) {
+                return badRequest("Amount must be positive");
+            }
+
+            System.out.println("DEBUG: Starting bulk deposit for domain: " + workDomain + ", amount: " + amount);
+
+            Map<String, Object> result = savingAccountService.bulkDepositByDomain(workDomain, amount, description);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Bulk deposit completed successfully");
+            response.put("workDomain", workDomain);
+            response.put("amount", amount);
+            response.put("description", description != null ? description : "Bulk deposit");
+            response.put("results", result);
+
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e) {
+            return badRequest(e.getMessage());
+        } catch (Exception e) {
+            System.err.println("ERROR in bulk deposit: " + e.getMessage());
+            e.printStackTrace();
+            return serverError("Error processing bulk deposit: " + e.getMessage());
         }
     }
 
