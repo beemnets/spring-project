@@ -103,8 +103,8 @@ Independent entity for system access control with role-based permissions.
 ## Features
 
 ### Admin Functionality
-- **Full System Access**: Complete control over all modules
-- **Staff Management**: Create, update, delete, and manage staff roles
+- **Full System Access**: Complete control over all modules except enforcement module
+- **Staff Management**: Create, delete, and manage staff roles
 - **Member Management**: Register, update, deactivate members
 - **Account Management**: Create and manage all account types
 - **Statistics Dashboard**: Access comprehensive system analytics
@@ -162,14 +162,14 @@ Before running the project, make sure you have the following installed on your m
 
 1. **Navigate to the project root:**
    ```bash
-   cd ma-ed-savings-cooperative
+   cd spring-projet
    ```
 
 2. **Configure the database connection in `src/main/resources/application.properties`:**
    ```properties
-   spring.datasource.url=jdbc:postgresql://localhost:5432/super_pharma03
-   spring.datasource.username=postgres
-   spring.datasource.password=1234
+   spring.datasource.url=jdbc:postgresql://localhost:5432/"microfinance"
+   spring.datasource.username="username"
+   spring.datasource.password="pssword"
    spring.jpa.hibernate.ddl-auto=update
    ```
 
@@ -195,7 +195,7 @@ Before running the project, make sure you have the following installed on your m
 
 3. **Configure environment variables (create `.env.local`):**
    ```env
-   NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api
+   NEXT_PUBLIC_API_BASE_URL=https://localhost:8080/api
    ```
 
 4. **Run the development server:**
@@ -209,7 +209,7 @@ Before running the project, make sure you have the following installed on your m
 
 1. **Create PostgreSQL database:**
    ```sql
-   CREATE DATABASE super_pharma03;
+   CREATE DATABASE microfinance;
    ```
 
 2. **Create admin user (run after starting backend):**
@@ -218,17 +218,11 @@ Before running the project, make sure you have the following installed on your m
    VALUES ('admin', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'ADMIN');
    ```
 
-### Default Login Credentials
-
-- **Admin User**: 
-  - Username: `admin`
-  - Password: `admin123`
-
 ## API Documentation
 
 ### Swagger URL
 Interactive API documentation is available at:
-**http://localhost:8080/swagger-ui/index.html**
+**https://localhost:8080/swagger-ui/index.html**
 
 ### Key Endpoints
 
@@ -303,23 +297,4 @@ ma-ed-savings-cooperative/
 - **Role-Based Access**: Granular permissions by user role
 - **Password Encryption**: BCrypt password hashing
 - **Session Management**: Secure session handling
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Support
-
-For support and questions, please contact the development team or create an issue in the repository.
-
 ---
-
-**Ma'ed Savings & Cooperative Management System** - Empowering financial cooperation through technology.
