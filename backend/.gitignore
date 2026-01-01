@@ -1,3 +1,4 @@
 target/
+backend/src/main/resources/*.p12
 
 
