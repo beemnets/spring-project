@@ -179,7 +179,7 @@ Before running the project, make sure you have the following installed on your m
    ./mvnw spring-boot:run
    ```
 
-   Backend API will start at: **http://localhost:8080**
+   Backend API will start at: **https://localhost:8080**
 
 ### Frontend Setup
 
@@ -203,7 +203,7 @@ Before running the project, make sure you have the following installed on your m
    npm run dev
    ```
 
-   Frontend will be available at: **http://localhost:3001**
+   Frontend will be available at: **https://localhost:3001**
 
 ### Database Setup
 
