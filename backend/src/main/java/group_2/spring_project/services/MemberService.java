@@ -1,14 +1,16 @@
-package group_2.spring_project.services;
+package org.wldu.webservices.services;
 
 
 
 
-import group_2.spring_project.entities.Member;
-import group_2.spring_project.entities.Share;
-import group_2.spring_project.repositories.MemberRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.wldu.webservices.entities.Member;
+import org.wldu.webservices.entities.Share;
+import org.wldu.webservices.repositories.MemberRepository;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -24,6 +26,8 @@ public class MemberService {
 
     @Transactional
     public Member registerMember(Member member) {
+        System.out.println("DEBUG: Registering member: " + member.getEmployeeId());
+        
         if (memberRepository.existsByEmployeeId(member.getEmployeeId())) {
             throw new IllegalArgumentException("Employee ID already exists: " + member.getEmployeeId());
         }
@@ -32,7 +36,10 @@ public class MemberService {
 
         createInitialShares(member);
 
-        return memberRepository.save(member);
+        Member savedMember = memberRepository.save(member);
+        System.out.println("DEBUG: Saved member with " + savedMember.getShares().size() + " shares");
+        
+        return savedMember;
     }
 
     // ========== READ OPERATIONS ==========
@@ -45,7 +52,22 @@ public class MemberService {
 
     @Transactional(readOnly = true)
     public List<Member> getAllActiveMembers() {
-        return memberRepository.findByIsActive(true);
+        return memberRepository.findByIsActiveWithShares(true);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Member> getAllActiveMembers(Pageable pageable) {
+        return memberRepository.findByIsActiveWithShares(true, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Member> getAllMembers(Pageable pageable) {
+        return memberRepository.findAllWithShares(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Member> getAllMembers() {
+        return memberRepository.findAllWithShares();
     }
 
     @Transactional(readOnly = true)
@@ -59,12 +81,25 @@ public class MemberService {
         if (keyword == null || keyword.trim().isEmpty()) {
             return getAllActiveMembers();
         }
-        return memberRepository.search(keyword.trim());
+        return memberRepository.searchWithShares(keyword.trim());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Member> searchMembers(String keyword, Pageable pageable) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return getAllMembers(pageable);
+        }
+        return memberRepository.searchWithShares(keyword.trim(), pageable);
     }
 
     @Transactional(readOnly = true)
     public List<Member> getMembersByDomain(Member.WorkDomain domain) {
-        return memberRepository.findByWorkDomain(domain);
+        return memberRepository.findByWorkDomainWithShares(domain);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Member> getMembersByDomain(Member.WorkDomain domain, Pageable pageable) {
+        return memberRepository.findByWorkDomainWithShares(domain, pageable);
     }
 
     // ========== UPDATE OPERATIONS ==========
@@ -183,6 +218,7 @@ public class MemberService {
     // ========== HELPER METHODS ==========
 
     private void createInitialShares(Member member) {
+        System.out.println("DEBUG: Creating initial shares for member: " + member.getEmployeeId());
         for (int i = 1; i <= 3; i++) {
             Share share = new Share();
             share.setCertificateNumber(
@@ -191,7 +227,9 @@ public class MemberService {
             );
             share.setMember(member);
             member.getShares().add(share);
+            System.out.println("DEBUG: Created share: " + share.getCertificateNumber());
         }
+        System.out.println("DEBUG: Total shares in member: " + member.getShares().size());
     }
 
     private void validateSharePurchase(Member member, int numberOfShares) {

@@ -1,13 +1,16 @@
-package group_2.spring_project.controllers;
+package org.wldu.webservices.controllers;
 
-
-import group_2.spring_project.entities.Member;
-import group_2.spring_project.services.MemberService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.wldu.webservices.entities.Member;
+import org.wldu.webservices.services.MemberService;
+import org.wldu.webservices.repositories.MemberRepository;
 
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +22,9 @@ public class MemberController {
 
     @Autowired
     private MemberService memberService;
+
+    @Autowired
+    private MemberRepository memberRepository;
 
     // ========== PUBLIC ENDPOINT ==========
     @PreAuthorize("permitAll()")
@@ -92,10 +98,24 @@ public class MemberController {
 
     @PreAuthorize("hasAnyRole('ASSISTANT', 'MANAGER', 'ADMIN')")
     @GetMapping
-    public ResponseEntity<?> getAllMembers() {
+    public ResponseEntity<?> getAllMembers(
+            @PageableDefault(size = 10, sort = "id") Pageable pageable,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false, defaultValue = "false") Boolean includeInactive) {
         try {
-            List<Member> members = memberService.getAllActiveMembers();
-            return ResponseEntity.ok(members);
+            if (search != null && !search.trim().isEmpty()) {
+                // For search, always include all members (active and inactive)
+                Page<Member> members = memberService.searchMembers(search.trim(), pageable);
+                return ResponseEntity.ok(members);
+            } else if (includeInactive) {
+                // Return all members including inactive ones
+                Page<Member> members = memberService.getAllMembers(pageable);
+                return ResponseEntity.ok(members);
+            } else {
+                // Default behavior - return only active members
+                Page<Member> members = memberService.getAllActiveMembers(pageable);
+                return ResponseEntity.ok(members);
+            }
         } catch (Exception e) {
             return serverError("Error retrieving members");
         }
@@ -103,9 +123,11 @@ public class MemberController {
 
     @PreAuthorize("hasAnyRole('ASSISTANT', 'MANAGER', 'ADMIN')")
     @GetMapping("/search")
-    public ResponseEntity<?> searchMembers(@RequestParam(required = false) String q) {
+    public ResponseEntity<?> searchMembers(
+            @RequestParam(required = false) String q,
+            @PageableDefault(size = 10, sort = "id") Pageable pageable) {
         try {
-            List<Member> members = memberService.searchMembers(q);
+            Page<Member> members = memberService.searchMembers(q, pageable);
             return ResponseEntity.ok(members);
         } catch (Exception e) {
             return serverError("Error searching members");
@@ -114,9 +136,11 @@ public class MemberController {
 
     @PreAuthorize("hasAnyRole('ASSISTANT', 'MANAGER', 'ADMIN')")
     @GetMapping("/domain/{domain}")
-    public ResponseEntity<?> getMembersByDomain(@PathVariable Member.WorkDomain domain) {
+    public ResponseEntity<?> getMembersByDomain(
+            @PathVariable Member.WorkDomain domain,
+            @PageableDefault(size = 10, sort = "id") Pageable pageable) {
         try {
-            List<Member> members = memberService.getMembersByDomain(domain);
+            Page<Member> members = memberService.getMembersByDomain(domain, pageable);
             return ResponseEntity.ok(members);
         } catch (Exception e) {
             return serverError("Error retrieving members by domain");
@@ -170,9 +194,13 @@ public class MemberController {
     public ResponseEntity<?> getMemberCount() {
         try {
             Long activeCount = memberService.getActiveMemberCount();
+            Long totalCount = memberRepository.count();
+            Long inactiveCount = totalCount - activeCount;
 
             Map<String, Object> response = new HashMap<>();
             response.put("activeMembers", activeCount);
+            response.put("inactiveMembers", inactiveCount);
+            response.put("totalMembers", totalCount);
 
             return ResponseEntity.ok(response);
 
