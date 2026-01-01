@@ -142,12 +142,12 @@ Independent entity for system access control with role-based permissions.
 
 | No. | Name | University ID | Role |
 |-----|------|---------------|------|
-| 1 | [Your Name] | [Your ID] | Full Stack Developer |
-| 2 | [Beemnet Solomon] | [1300507] | Backend Developer |
-| 3 | [Abel Amare] | [1305884] | Frontend Developer |
-| 4 | [Meseret Jobir] | [1303103] | Database Designer |
-| 5 | [Endale Gebeyehu] | [1301039] | System Analyst |
-| 6 | [Memar Adugna] | [1302072] | System Analyst |
+| 1 |   Name |  ID | Full Stack Developer |
+| 2 | Beemnet Solomon | 1300507 | Backend Developer |
+| 3 | Abel Amare | 1305884 | Frontend Developer |
+| 4 | Meseret Jobir | 1303103 | Database Designer |
+| 5 | Endale Gebeyehu | 1301039 | System Analyst |
+| 6 | Memar Adugna | 1302072 | System Analyst |
 
 ## Getting Started
 
